@@ -11,7 +11,7 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        String[] projects = {"bookkeeper", "avro"};
+        String[] projects = {"bookkeeper", "openjpa"};
 
         for (String project : projects) {
             System.out.println("Analizzando progetto: " + project);

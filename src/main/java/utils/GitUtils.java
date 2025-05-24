@@ -2,7 +2,6 @@ package utils;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListTagCommand;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;

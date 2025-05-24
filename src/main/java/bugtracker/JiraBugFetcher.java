@@ -108,15 +108,10 @@ public class JiraBugFetcher {
 
 
     private static String getJiraProjectKey(String project) {
-        switch (project.toLowerCase()) {
-            case "bookkeeper": return "BOOKKEEPER";
-            case "avro": return "AVRO";
-            case "storm": return "STORM";
-            case "zookeeper": return "ZOOKEEPER";
-            case "openjpa": return "OPENJPA";
-            case "syncope": return "SYNCOPE";
-            case "tajo": return "TAJO";
-            default: return null;
-        }
+        return switch (project.toLowerCase()) {
+            case "bookkeeper" -> "BOOKKEEPER";
+            case "openjpa" -> "OPENJPA";
+            default -> null;
+        };
     }
 }
