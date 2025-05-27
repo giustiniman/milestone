@@ -21,7 +21,7 @@ public class Main {
                 System.out.println("Analizzando release: " + release);
                 File releaseDir = GitUtils.checkout(project, release);
                 List<MethodMetrics> metrics = CKRunner.run(project, release, releaseDir);
-                JiraBugFetcher.markBuggyMethods(project, release, metrics);
+                JiraBugFetcher.markBuggyMethods(project, release, metrics, releases);
                 CSVExporter.export(project, release, metrics);
             }
 

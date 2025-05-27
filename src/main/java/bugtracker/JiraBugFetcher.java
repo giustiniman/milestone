@@ -7,12 +7,18 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JiraBugFetcher {
 
     private static final String BASE_URL = "https://issues.apache.org/jira/rest/api/2/search";
 
-    public static void markBuggyMethods(String project, String release, List<MethodMetrics> metrics) {
+    public static void markBuggyMethods(String project, String currentRelease, List<MethodMetrics> metrics, List<String> allReleases) {
+
+        String normalizedRelease = currentRelease.replace("release-", "");
+        System.out.println("🔍 Analizzando release: " + normalizedRelease);
+
         try {
             String projectKey = getJiraProjectKey(project);
             if (projectKey == null) return;
@@ -22,7 +28,7 @@ public class JiraBugFetcher {
                     projectKey
             );
             String encodedJql = java.net.URLEncoder.encode(jql, "UTF-8");
-            String apiUrl = BASE_URL + "?jql=" + encodedJql + "&fields=key&maxResults=1000";
+            String apiUrl = BASE_URL + "?jql=" + encodedJql + "&fields=key,fixVersions,versions&maxResults=1000";
 
             HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
             conn.setRequestMethod("GET");
@@ -32,50 +38,63 @@ public class JiraBugFetcher {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             JsonArray issues = json.getAsJsonArray("issues");
 
-            Set<String> buggyFiles = new HashSet<>();
+            Map<String, Set<String>> releaseToBuggyMethods = new HashMap<>();
 
             for (JsonElement el : issues) {
-                String issueKey = el.getAsJsonObject().get("key").getAsString();
-                List<String> files = getFilesFromBugCommits(issueKey, project, release);
-                buggyFiles.addAll(files);
-            }
+                JsonObject issue = el.getAsJsonObject();
+                String issueKey = issue.get("key").getAsString();
 
-            // marca i metodi solo se il loro file è stato toccato da commit buggy
-            for (MethodMetrics m : metrics) {
-                String methodPath = m.getMethodPath().split("\\(")[0]; // rimuove il metodo tra parentesi
-                methodPath = methodPath.replace("\\", "/"); // uniforma path
+                JsonArray fixVersions = issue.getAsJsonObject("fields").getAsJsonArray("fixVersions");
+                JsonArray affectedVersions = issue.getAsJsonObject("fields").getAsJsonArray("versions");
 
-                // Rimuove il prefisso "release-..." se presente
-                if (methodPath.matches("^release-[^/]+/.*")) {
-                    methodPath = methodPath.substring(methodPath.indexOf("/") + 1);
+                Set<String> affectedSet = new HashSet<>();
+                if (affectedVersions != null) {
+                    for (JsonElement a : affectedVersions) {
+                        if (a.getAsJsonObject().has("name")) {
+                            String name = a.getAsJsonObject().get("name").getAsString();
+                            affectedSet.add(name);
+                        }
+                    }
                 }
 
-                // Troncamento a solo file.java
-                methodPath = methodPath.split("\\.java")[0] + ".java";
-                // tronca dopo il file
+                System.out.println("🐞 Bug " + issueKey + " → Affected: " + affectedSet);
 
-                int i=0;
-                for (String buggyFile : buggyFiles) {
-                    System.out.println(i+ " mp "+methodPath  + ":" + "bf " + buggyFile);
-                    i++;
-                    if (methodPath.equalsIgnoreCase(buggyFile)) {
-                        m.setBuggy(true);
-                        break;
+                Map<String, Set<String>> modified = getModifiedMethodsFromBugCommits(issueKey, project, currentRelease);
+                for (String file : modified.keySet()) {
+                    for (String method : modified.get(file)) {
+                        System.out.println("📄 Modificato: " + file + " → metodo: " + method);
+                        for (String affected : affectedSet) {
+                            releaseToBuggyMethods.putIfAbsent(affected, new HashSet<>());
+                            String methodKey = file + "/" + method;
+                            releaseToBuggyMethods.get(affected).add(methodKey);
+                            System.out.println("📝 Aggiunto metodo buggy in release " + affected + ": " + methodKey);
+                        }
                     }
                 }
             }
 
+            for (MethodMetrics m : metrics) {
+                String fullPath = m.getMethodPath().split("\\(")[0].replace("\\", "/");
+                String[] parts = fullPath.split("/");
+                String methodName = parts[parts.length - 1];
+                String methodPath = String.join("/", Arrays.copyOf(parts, parts.length - 1));
+                String fullKey = methodPath + "/" + methodName;
 
-
-            System.out.println("Bug associati a " + buggyFiles.size() + " file.");
+                if (releaseToBuggyMethods.containsKey(normalizedRelease)) {
+                    if (releaseToBuggyMethods.get(normalizedRelease).contains(fullKey)) {
+                        m.setBuggy(true);
+                        System.out.println("✅ Metodo marcato buggy in " + normalizedRelease + ": " + fullKey);
+                    }
+                }
+            }
 
         } catch (Exception e) {
-            System.err.println("Errore interrogando JIRA: " + e.getMessage());
+            System.err.println("❌ Errore interrogando JIRA: " + e.getMessage());
         }
     }
 
-    private static List<String> getFilesFromBugCommits(String issueKey, String project, String release) {
-        List<String> files = new ArrayList<>();
+    private static Map<String, Set<String>> getModifiedMethodsFromBugCommits(String issueKey, String project, String release) {
+        Map<String, Set<String>> result = new HashMap<>();
         String repoPath = "./repos/" + project + "/" + release;
 
         try {
@@ -84,26 +103,43 @@ public class JiraBugFetcher {
                     .start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(logProc.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                Process diffProc = new ProcessBuilder("git", "diff-tree", "--no-commit-id", "--name-only", "-r", line.trim())
+            String commitHash;
+            while ((commitHash = reader.readLine()) != null) {
+                System.out.println("🔍 Commit trovato per " + issueKey + ": " + commitHash);
+
+                Process showProc = new ProcessBuilder("git", "show", "--unified=0", commitHash)
                         .directory(new File(repoPath))
                         .start();
 
-                BufferedReader diffReader = new BufferedReader(new InputStreamReader(diffProc.getInputStream()));
-                String fileLine;
-                while ((fileLine = diffReader.readLine()) != null) {
-                    if (fileLine.endsWith(".java")) {
-                        files.add(fileLine.replace("\\", "/"));  // uniforma per confronto
+                BufferedReader diffReader = new BufferedReader(new InputStreamReader(showProc.getInputStream()));
+
+                String currentFile = null;
+                String line;
+                Pattern filePattern = Pattern.compile("^\\+\\+\\+ b/(.*\\.java)$");
+                Pattern methodPattern = Pattern.compile("(?<=\\s)([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(");
+
+                while ((line = diffReader.readLine()) != null) {
+                    Matcher fileMatcher = filePattern.matcher(line);
+                    if (fileMatcher.find()) {
+                        currentFile = fileMatcher.group(1).replace("\\", "/");
+                        result.putIfAbsent(currentFile, new HashSet<>());
+                    }
+
+                    if (currentFile != null && line.startsWith("+")) {
+                        Matcher m = methodPattern.matcher(line);
+                        while (m.find()) {
+                            String methodName = m.group(1);
+                            result.get(currentFile).add(methodName);
+                        }
                     }
                 }
             }
 
         } catch (IOException e) {
-            System.err.println("Errore nei comandi git: " + e.getMessage());
+            System.err.println("❌ Errore nei comandi git: " + e.getMessage());
         }
 
-        return files;
+        return result;
     }
 
 
