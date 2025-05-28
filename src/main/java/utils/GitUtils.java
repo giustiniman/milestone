@@ -15,7 +15,6 @@ public class GitUtils {
     private static final String BASE_REPO_DIR = "./repos/";
     private static final String GITHUB_BASE_URL = "https://github.com/apache/";
 
-
     public static List<String> cloneAndFilterReleases(String project) throws Exception {
         File projectDir = new File(BASE_REPO_DIR + project);
         File cloneDir = new File(projectDir, project + "-clone");
@@ -37,23 +36,33 @@ public class GitUtils {
         Map<String, Date> tagDateMap = new HashMap<>();
 
         for (Ref tag : tags) {
-            String tagName = tag.getName().replace("refs/tags/", "");
-            try {
-                ObjectId tagId = git.getRepository().resolve("refs/tags/" + tagName);
-                RevWalk walk = new RevWalk(git.getRepository());
-                RevCommit commit = walk.parseCommit(tagId);
-                tagDateMap.put(tagName, commit.getCommitterIdent().getWhen());
-            } catch (Exception ignored) {}
+            String tagName = tag.getName().replace("refs/tags/", ""); // es: release-4.2.0
+
+            // Estrai la parte numerica
+            String version = tagName.startsWith("release-") ? tagName.substring(8) : tagName;
+
+            if (!version.matches("^[0-9]+\\.[0-9]+\\.[0-9]+$")) continue;
+
+            if (version.compareTo("4.0.0") >= 0 && version.compareTo("4.5.0") <= 0) {
+                try {
+                    ObjectId tagId = git.getRepository().resolve("refs/tags/" + tagName);
+                    RevWalk walk = new RevWalk(git.getRepository());
+                    RevCommit commit = walk.parseCommit(tagId);
+                    tagDateMap.put(tagName, commit.getCommitterIdent().getWhen());
+                } catch (Exception ignored) {}
+            }
         }
+
 
         List<String> sortedTags = new ArrayList<>(tagDateMap.keySet());
         sortedTags.sort(Comparator.comparing(tagDateMap::get));
 
         int limit = (int) (sortedTags.size() * 0.33);
-        return sortedTags.subList(0, limit);
+        List<String> selected = sortedTags.subList(0, limit);
+
+        System.out.println("✅ Tag selezionati (dal 33% tra 4.0.0 e 4.5.0): " + selected);
+        return selected;
     }
-
-
 
     public static File checkout(String project, String release) throws Exception {
         File projectDir = new File(BASE_REPO_DIR + project);
@@ -77,7 +86,5 @@ public class GitUtils {
 
         return releaseDir;
     }
-
-
-
 }
+

@@ -14,14 +14,12 @@ public class JiraBugFetcher {
 
     private static final String BASE_URL = "https://issues.apache.org/jira/rest/api/2/search";
 
-    public static void markBuggyMethods(String project, String currentRelease, List<MethodMetrics> metrics, List<String> allReleases) {
-
-        String normalizedRelease = currentRelease.replace("release-", "");
-        System.out.println("🔍 Analizzando release: " + normalizedRelease);
+    public static Map<String, Set<String>> buildBuggyMethodMap(String project, String repoClonePath) {
+        Map<String, Set<String>> releaseToBuggyMethods = new HashMap<>();
 
         try {
             String projectKey = getJiraProjectKey(project);
-            if (projectKey == null) return;
+            if (projectKey == null) return releaseToBuggyMethods;
 
             String jql = String.format(
                     "project=%s AND issuetype=Bug AND (status=Closed OR status=Resolved) AND resolution=Fixed",
@@ -38,77 +36,55 @@ public class JiraBugFetcher {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             JsonArray issues = json.getAsJsonArray("issues");
 
-            Map<String, Set<String>> releaseToBuggyMethods = new HashMap<>();
-
             for (JsonElement el : issues) {
                 JsonObject issue = el.getAsJsonObject();
                 String issueKey = issue.get("key").getAsString();
 
-                JsonArray fixVersions = issue.getAsJsonObject("fields").getAsJsonArray("fixVersions");
-                JsonArray affectedVersions = issue.getAsJsonObject("fields").getAsJsonArray("versions");
+                JsonElement versionsElement = issue.getAsJsonObject().get("fields").getAsJsonObject().get("versions");
+                if (versionsElement == null || !versionsElement.isJsonArray()) continue;
 
+                JsonArray affectedVersions = versionsElement.getAsJsonArray();
                 Set<String> affectedSet = new HashSet<>();
                 if (affectedVersions != null) {
                     for (JsonElement a : affectedVersions) {
                         if (a.getAsJsonObject().has("name")) {
-                            String name = a.getAsJsonObject().get("name").getAsString();
-                            affectedSet.add(name);
+                            affectedSet.add(a.getAsJsonObject().get("name").getAsString());
                         }
                     }
                 }
 
-                System.out.println("🐞 Bug " + issueKey + " → Affected: " + affectedSet);
-
-                Map<String, Set<String>> modified = getModifiedMethodsFromBugCommits(issueKey, project, currentRelease);
+                Map<String, Set<String>> modified = getModifiedMethodsFromBugCommits(issueKey, new File(repoClonePath));
                 for (String file : modified.keySet()) {
                     for (String method : modified.get(file)) {
-                        System.out.println("📄 Modificato: " + file + " → metodo: " + method);
+                        String methodKey = file + "/" + method;
                         for (String affected : affectedSet) {
                             releaseToBuggyMethods.putIfAbsent(affected, new HashSet<>());
-                            String methodKey = file + "/" + method;
                             releaseToBuggyMethods.get(affected).add(methodKey);
-                            System.out.println("📝 Aggiunto metodo buggy in release " + affected + ": " + methodKey);
                         }
-                    }
-                }
-            }
-
-            for (MethodMetrics m : metrics) {
-                String fullPath = m.getMethodPath().split("\\(")[0].replace("\\", "/");
-                String[] parts = fullPath.split("/");
-                String methodName = parts[parts.length - 1];
-                String methodPath = String.join("/", Arrays.copyOf(parts, parts.length - 1));
-                String fullKey = methodPath + "/" + methodName;
-
-                if (releaseToBuggyMethods.containsKey(normalizedRelease)) {
-                    if (releaseToBuggyMethods.get(normalizedRelease).contains(fullKey)) {
-                        m.setBuggy(true);
-                        System.out.println("✅ Metodo marcato buggy in " + normalizedRelease + ": " + fullKey);
                     }
                 }
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Errore interrogando JIRA: " + e.getMessage());
+            System.err.println("Errore interrogando JIRA: " + e.getMessage());
         }
+
+        return releaseToBuggyMethods;
     }
 
-    private static Map<String, Set<String>> getModifiedMethodsFromBugCommits(String issueKey, String project, String release) {
+    private static Map<String, Set<String>> getModifiedMethodsFromBugCommits(String issueKey, File repoDir) {
         Map<String, Set<String>> result = new HashMap<>();
-        String repoPath = "./repos/" + project + "/" + release;
 
         try {
             Process logProc = new ProcessBuilder("git", "log", "--pretty=format:%H", "--grep=" + issueKey)
-                    .directory(new File(repoPath))
+                    .directory(repoDir)
                     .start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(logProc.getInputStream()));
             String commitHash;
             while ((commitHash = reader.readLine()) != null) {
-                System.out.println("🔍 Commit trovato per " + issueKey + ": " + commitHash);
-
                 Process showProc = new ProcessBuilder("git", "show", "--unified=0", commitHash)
-                        .directory(new File(repoPath))
+                        .directory(repoDir)
                         .start();
 
                 BufferedReader diffReader = new BufferedReader(new InputStreamReader(showProc.getInputStream()));
@@ -136,12 +112,11 @@ public class JiraBugFetcher {
             }
 
         } catch (IOException e) {
-            System.err.println("❌ Errore nei comandi git: " + e.getMessage());
+            System.err.println("Errore nei comandi git: " + e.getMessage());
         }
 
         return result;
     }
-
 
     private static String getJiraProjectKey(String project) {
         return switch (project.toLowerCase()) {
