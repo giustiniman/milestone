@@ -13,11 +13,11 @@ public class CSVExporter {
             new File("output").mkdirs();
 
             FileWriter writer = new FileWriter("output/" + project + "_" + release + ".csv");
-            writer.write("project,methodPath,releaseId,loc,cyclomaticComplexity,cognitiveComplexity,statements,nestingDepth,parameterCount,codeSmells,bugginess\n");
+            writer.write("project,releaseId,methodPath,loc,cyclomaticComplexity,cognitiveComplexity,statements,nestingDepth,parameterCount,codeSmells,bugginess\n");
 
             for (MethodMetrics m : metrics) {
                 writer.write(String.format("%s,%s,%s,%d,%d,%d,%d,%d,%d,%d,%s\n",
-                        m.getProject(), m.getMethodPath(), m.getReleaseId(),
+                        m.getProject(), m.getReleaseId(), m.getMethodPath(),
                         m.getLoc(), m.getCyclomaticComplexity(), m.getCognitiveComplexity(),
                         m.getStatements(), m.getNestingDepth(), m.getParameterCount(),
                         m.getCodeSmells(), m.isBuggy() ? "yes" : "no"));
