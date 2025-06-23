@@ -1,24 +1,37 @@
 package utils;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import model.Release;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.time.LocalDate;
 import java.util.*;
+
+import static main.JiraController.fetchReleasedVersionsFromJira;
 
 public class GitUtils {
 
     private static final String BASE_REPO_DIR = "./repos/";
     private static final String GITHUB_BASE_URL = "https://github.com/apache/";
 
-
-    public static List<String> cloneAndFilterReleases(String project) throws Exception {
-        File projectDir = new File(BASE_REPO_DIR + project);
-        File cloneDir = new File(projectDir, project + "-clone");
+    public static List<Release> cloneAndSelectReleasesFromJira(String project) throws Exception {
+        File projectDir = new File(BASE_REPO_DIR + project.toLowerCase());
+        File cloneDir = new File(projectDir, project.toLowerCase() + "-clone");
         File gitDir = new File(cloneDir, ".git");
 
         if (!gitDir.exists()) {
@@ -31,52 +44,45 @@ public class GitUtils {
             System.out.println("✅ Clone già presente: " + cloneDir.getPath());
         }
 
-        Git git = Git.open(cloneDir);
+        List<Release> allReleases = fetchReleasedVersionsFromJira(project);
 
-        List<Ref> tags = git.tagList().call();
-        Map<String, Date> tagDateMap = new HashMap<>();
+        int limit = (int) Math.ceil(allReleases.size() * 0.34);
+        List<Release> selected = allReleases.subList(0, limit);
 
-        for (Ref tag : tags) {
-            String tagName = tag.getName().replace("refs/tags/", "");
-            try {
-                ObjectId tagId = git.getRepository().resolve("refs/tags/" + tagName);
-                RevWalk walk = new RevWalk(git.getRepository());
-                RevCommit commit = walk.parseCommit(tagId);
-                tagDateMap.put(tagName, commit.getCommitterIdent().getWhen());
-            } catch (Exception ignored) {}
+        for  (Release release : selected) {
+            System.out.println("✅ Release selezionate da JIRA (primo 34%): " + release.releaseName());
+
         }
 
-        List<String> sortedTags = new ArrayList<>(tagDateMap.keySet());
-        sortedTags.sort(Comparator.comparing(tagDateMap::get));
-
-        int limit = (int) (sortedTags.size() * 0.33);
-        return sortedTags.subList(0, limit);
+        return selected;
     }
 
-
-
-    public static File checkout(String project, String release) throws Exception {
+    public static File checkout(String project, String releaseTag) throws Exception {
         File projectDir = new File(BASE_REPO_DIR + project);
         File cloneDir = new File(projectDir, project + "-clone");
-        File releaseDir = new File(projectDir, release);
+        File releaseDir = new File(projectDir, releaseTag);
 
         if (releaseDir.exists()) {
-            System.out.println("✅ Release " + release + " già presente, skip checkout.");
+            System.out.println("✅ Release " + releaseTag + " già presente, skip checkout.");
             return releaseDir;
         }
 
-        System.out.println("📦 Checkout della release " + release + " in " + releaseDir.getPath());
+        System.out.println("📦 Checkout della release " + releaseTag + " in " + releaseDir.getPath());
 
         FileUtils.copyDirectory(cloneDir, releaseDir);
 
         try (Git git = Git.open(releaseDir)) {
-            git.reset().setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD).call();
+            git.reset().setMode(ResetCommand.ResetType.HARD).call();
             git.clean().setForce(true).setCleanDirectories(true).call();
-            git.checkout().setName("refs/tags/" + release).call();
+            git.checkout().setName("refs/tags/" + releaseTag).call();
         }
 
         return releaseDir;
     }
+
+
+
+
 
 
 

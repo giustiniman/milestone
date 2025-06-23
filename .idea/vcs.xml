@@ -2,5 +2,29 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/bookkeeper-clone" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.0.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.1.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.10.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.4" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.3.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.3.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.3.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.4.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.5.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.5.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.6.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.6.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.6.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.7.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.7.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.7.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.7.3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.8.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.8.1" vcs="Git" />
   </component>
 </project>

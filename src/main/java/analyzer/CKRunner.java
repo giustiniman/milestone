@@ -58,6 +58,7 @@ public class CKRunner {
         m.setMethodPath(filePath + "/" + cleanedMethodName);
 
         m.setLoc(method.getLoc());
+        
         // m.setCyclomaticComplexity(method.getCyclo());
         // m.setCognitiveComplexity(method.getCognitiveComplexity());
         // m.setStatements(method.getStatements());
