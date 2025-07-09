@@ -24,13 +24,13 @@ public final class Release {
         //classes = new ArrayList<>();
     }
 
-//    public Release(int id, String releaseName, LocalDate releaseDate) {
-//        this.id = id;
-//        this.releaseName = releaseName;
-//        this.releaseDate = releaseDate;
-//        commitList = new ArrayList<>();
-//        //classes = new ArrayList<>();
-//    }
+    public Release(int id, String releaseName, LocalDate releaseDate) {
+        this.id = id;
+        this.releaseName = releaseName;
+        this.releaseDate = releaseDate;
+        commitList = new ArrayList<>();
+        //classes = new ArrayList<>();
+    }
 
     public int id() {
         return id;

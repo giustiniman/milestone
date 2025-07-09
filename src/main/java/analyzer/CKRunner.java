@@ -1,6 +1,8 @@
 package analyzer;
 
+import model.Method;
 import model.MethodMetrics;
+import org.eclipse.jdt.internal.compiler.ast.JavadocMessageSend;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -11,10 +13,11 @@ import com.github.mauricioaniche.ck.CKNotifier;
 import com.github.mauricioaniche.ck.CKClassResult;
 import com.github.mauricioaniche.ck.CKMethodResult;
 
+
 public class CKRunner {
-    public static List<MethodMetrics> run(String project, String release, File releaseDir) {
+    public static List<Method> run(String project, String release, File releaseDir) {
         String projectPath = releaseDir.getAbsolutePath();
-        List<MethodMetrics> result = new ArrayList<>();
+        List<Method> result = new ArrayList<>();
 
         new CK().calculate(projectPath, new CKNotifier() {
 
@@ -29,7 +32,7 @@ public class CKRunner {
                 }
 
                 for (CKMethodResult method : ckClassResult.getMethods()) {
-                    MethodMetrics m = buildMethodMetrics(project, release, filePath, method);
+                    Method m = buildMethodMetrics(project, release, filePath, method);
                     result.add(m);
                 }
 
@@ -49,16 +52,20 @@ public class CKRunner {
     }
 
 
-    private static MethodMetrics buildMethodMetrics(String project, String release, String filePath, CKMethodResult method) {
-        MethodMetrics m = new MethodMetrics();
+    private static Method buildMethodMetrics(String project, String release, String filePath, CKMethodResult method) {
+        Method m = new Method();
         m.setProject(project);
         m.setReleaseId(release);
 
-        String cleanedMethodName = method.getMethodName().split("/")[0];
+        //System.out.println(method.getMethodName());
+
+        String cleanedMethodName = method.getMethodName().replaceAll("/\\d+", "").replace('[', '(').replace(']', ')');
+
+        //String cleanedMethodName = method.getMethodName().split("/")[0];
         m.setMethodPath(filePath + "/" + cleanedMethodName);
 
         m.setLoc(method.getLoc());
-        
+
         // m.setCyclomaticComplexity(method.getCyclo());
         // m.setCognitiveComplexity(method.getCognitiveComplexity());
         // m.setStatements(method.getStatements());

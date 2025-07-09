@@ -1,5 +1,6 @@
 package utils;
 
+import model.Method;
 import model.MethodMetrics;
 
 import java.io.*;
@@ -7,20 +8,29 @@ import java.util.List;
 
 public class CSVExporter {
 
-    public static void export(String project, String release, List<MethodMetrics> metrics) {
+    public static void export(String project, String release, List<Method> metrics) {
         try {
             // Crea cartella output se non esiste
             new File("output").mkdirs();
 
-            FileWriter writer = new FileWriter("output/" + project + "_" + release + ".csv");
-            writer.write("project,releaseId,methodPath,loc,cyclomaticComplexity,cognitiveComplexity,statements,nestingDepth,parameterCount,codeSmells,bugginess\n");
+//            private int methodHistories;
+//            private int authors;
+//            private int stmtAdded;
+//            private int stmtDeleted;
+//            private int churn;
+//            private int cond;
+//            private int elseAdded;
+//            private int elseDeleted;
 
-            for (MethodMetrics m : metrics) {
-                writer.write(String.format("%s,%s,%s,%d,%d,%d,%d,%d,%d,%d,%s\n",
+            FileWriter writer = new FileWriter("output/" + project + "_" + release + ".csv");
+            writer.write("project,releaseId,methodPath,loc,cyclomaticComplexity,cognitiveComplexity,statements,nestingDepth,parameterCount,codeSmells,authors,methodHistories,cond,bugginess\n");
+
+            for (Method m : metrics) {
+                writer.write(String.format("%s,%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s\n",
                         m.getProject(), m.getReleaseId(), m.getMethodPath(),
                         m.getLoc(), m.getCyclomaticComplexity(), m.getCognitiveComplexity(),
                         m.getStatements(), m.getNestingDepth(), m.getParameterCount(),
-                        m.getCodeSmells(), m.isBuggy() ? "yes" : "no"));
+                        m.getCodeSmells(), m.getAuthors(), m.getMethodHistories(), m.getCond(), m.isBuggy() ? "yes" : "no"));
             }
 
             writer.close();
@@ -35,10 +45,11 @@ public class CSVExporter {
         File[] files = outputDir.listFiles((dir, name) -> name.startsWith(project + "_") && name.endsWith(".csv"));
         if (files == null || files.length == 0) return;
 
-        try (FileWriter writer = new FileWriter("output/" + project + "_dataset.csv")) {
+        try (FileWriter writer = new FileWriter("output/final/" + project + "_dataset.csv")) {
             boolean headerWritten = false;
 
             for (File f : files) {
+                System.out.println(f);
                 BufferedReader reader = new BufferedReader(new FileReader(f));
                 String line;
                 boolean firstLine = true;

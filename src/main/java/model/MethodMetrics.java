@@ -13,6 +13,50 @@ public class MethodMetrics {
     private int codeSmells;
     private boolean buggy;
 
+
+    private int methodHistories;
+    private int authors;
+    private int stmtAdded;
+    private int stmtDeleted;
+    private int churn;
+    private int cond;
+    private int elseAdded;
+
+    public int getMethodHistories() {
+        return methodHistories;
+    }
+
+    public int getAuthors() {
+        return authors;
+    }
+
+    public int getStmtAdded() {
+        return stmtAdded;
+    }
+
+    public int getStmtDeleted() {
+        return stmtDeleted;
+    }
+
+    public int getChurn() {
+        return churn;
+    }
+
+    public int getCond() {
+        return cond;
+    }
+
+    public int getElseAdded() {
+        return elseAdded;
+    }
+
+    public int getElseDeleted() {
+        return elseDeleted;
+    }
+
+    private int elseDeleted;
+
+
     public String getProject() { return project; }
     public void setProject(String project) { this.project = project; }
 
@@ -45,4 +89,36 @@ public class MethodMetrics {
 
     public boolean isBuggy() { return buggy; }
     public void setBuggy(boolean buggy) { this.buggy = buggy; }
+
+
+    public void setMethodHistories(int methodHistories) {
+        this.methodHistories = methodHistories;
+    }
+
+    public void setStmtAdded(int stmtAdded) {
+        this.stmtAdded = stmtAdded;
+    }
+
+    public void setStmtDeleted(int stmtDeleted) {
+        this.stmtDeleted = stmtDeleted;
+    }
+
+    public void setChurn(int churn) {
+        this.churn = churn;
+    }
+
+    public void setCond(int cond) {
+        this.cond = cond;
+    }
+
+    public void setElseAdded(int elseAdded) {
+        this.elseAdded = elseAdded;
+    }
+
+    public void setElseDeleted(int elseDeleted) {
+        this.elseDeleted = elseDeleted;
+    }
+
+    public void setAuthors(int size) {
+    }
 }

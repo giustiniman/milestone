@@ -1,17 +1,18 @@
 package main;
 
 import analyzer.CKRunner;
-import bugtracker.JiraBugFetcher;
+import bugtracker.Proportion;
 import com.google.gson.JsonArray;
+import model.Method;
 import model.MethodMetrics;
 import model.Release;
 import model.Ticket;
 import utils.CSVExporter;
 import utils.GitUtils;
+import utils.MetricsCalculator;
+import utils.TicketRetriever;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.*;
 
 public class Controller {
@@ -44,41 +45,73 @@ public class Controller {
 
             JsonArray jsonIssues = JiraController.getJsonTickets(project);
             List<Ticket> tickets = ticketController.obtainTickets(jsonIssues, selectedReleases);
-            List<Ticket> fixedTickets = ticketController.fixTicket(tickets, selectedReleases);
-            Map<String, Set<String>> buggyMap = JiraBugFetcher.buildBuggyMethodMap1(fixedTickets, centralRepo.getAbsolutePath());
+            Proportion proportion = new Proportion();
+            proportion.setProject(project);
+            List<Ticket> ticketsWithAV = ticketController.returnConsistentTickets(tickets);
+            for(Ticket ticket : ticketsWithAV) {
+                proportion.addProportion(ticket);
+            }
 
-           // Map<String, Set<String>> buggyMap = JiraBugFetcher.starter(project, centralRepo.getAbsolutePath(), selectedReleases);
 
-            for (Release release : selectedReleases) {
-                String releaseTag = "release-" + release.releaseName();
+            List<Ticket> fixedTickets = ticketController.fixTicket(tickets, selectedReleases, proportion);
+            //Map<String, Set<String>> buggyMap = JiraBugFetcher.buildBuggyMethodMap1(fixedTickets, centralRepo.getAbsolutePath());
+
+            TicketRetriever ticketRetriever = new TicketRetriever();
+
+            List<Method> modifiedMethods = ticketRetriever.extractModifiedMethodsFromCommits(fixedTickets, centralRepo);
+
+            String releaseTag;
+
+            //filtro le release prendendo il primo 34%
+            List<Release> finalReleases = selectedReleases.subList(0, (int) Math.ceil(selectedReleases.size() * 0.34));
+
+
+            for (Release release : finalReleases) {
+
+
                 File releaseDir;
                 try {
-                    releaseDir = GitUtils.checkout(project.toLowerCase(), releaseTag);
+                    releaseDir = GitUtils.checkout(project.toLowerCase(), release.releaseName());
                 } catch (Exception e) {
-                    System.err.println("❌ Errore nel checkout della release " + releaseTag + ": " + e.getMessage());
+                    System.err.println("❌ Errore nel checkout della release " + release.getReleaseName() + ": " + e.getMessage());
                     continue;
                 }
 
-                List<MethodMetrics> metrics = CKRunner.run(project.toLowerCase(), releaseTag, releaseDir);
 
-                for (MethodMetrics m : metrics) {
-                    String path = m.getMethodPath().split("\\(")[0].replace("\\", "/");
-                    String[] parts = path.split("/");
-                    String methodName = parts[parts.length - 1].replaceAll("\\[.*]", "");
-                    String methodPath = String.join("/", Arrays.copyOf(parts, parts.length - 1));
-                    String fullKey = methodPath + "/" + methodName;
 
-                    if (buggyMap.containsKey(release.getReleaseName()) && buggyMap.get(release.getReleaseName()).contains(fullKey)) {
-                        m.setBuggy(true);
-                        System.out.println("✅ [release-" + release.getReleaseName() + "] Metodo buggy: " + fullKey);
+
+                List<Method> methodMetrics = CKRunner.run(project.toLowerCase(), release.getReleaseName(), releaseDir);
+
+                for (Method m : methodMetrics) {
+
+                    m.setReleaseId(release.getReleaseName());
+
+
+                    for(Method modifiedMethod : modifiedMethods){
+                        if(modifiedMethod.getMethodPath().equals(m.getMethodPath())){
+//
+                            m.setBuggy(true);
+//
+                            System.out.println("✅ [" + release.getReleaseName() + "] Metodo buggy: " + m.getMethodPath());
+                        }
                     }
+
+
+
+
+                    if(m.isBuggy()) {
+                        m.setMethodHistories(MetricsCalculator.computeMethodModifications(m, finalReleases, releaseDir));
+                    }
+
+
+
                 }
 
-                CSVExporter.export(project.toLowerCase(), releaseTag, metrics);
+                CSVExporter.export(project.toLowerCase(), release.getReleaseName(), methodMetrics);
             }
             CSVExporter.mergeAllCSVs(project.toLowerCase());
 
-            WEKAController.classify(project.toLowerCase());
+           // WEKAController.classify(project.toLowerCase());
 
         }
     }

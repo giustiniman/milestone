@@ -22,7 +22,7 @@ public class TicketController {
         this.ticketList = new ArrayList<>();
     }
 
-    public static List<Ticket> returnConsistentTickets(List<Ticket> allTickets, LocalDate resolutionDate) {
+    public List<Ticket> returnConsistentTickets(List<Ticket> allTickets) {
 
         List<Ticket> ticketsWithAV = new ArrayList<>();
 
@@ -37,24 +37,48 @@ public class TicketController {
         return ticketsWithAV;
     }
 
-    public List<Ticket> fixTicket(List<Ticket> tickets, List<Release> selectedReleases) throws IOException, URISyntaxException {
+    public List<Ticket> fixTicket(List<Ticket> tickets, List<Release> selectedReleases, Proportion proportion) throws IOException, URISyntaxException {
 
+        List<Ticket> finalTicketsList = new ArrayList<>();
+
+
+        //Proportion proportion = new Proportion();
         for (Ticket ticket : tickets) {
             if(ticket.getAv().isEmpty()){
-                Proportion proportion = new Proportion();
                 proportion.fixTicketWithProportion(ticket, selectedReleases);
+                completeAV(ticket, selectedReleases);
+                System.out.println(ticket.getTicketKey() + " [" + ticket.getAv().stream()
+                        .map(Release::getReleaseName)
+                        .collect(Collectors.joining(", ")) + "]");
             }
+            finalTicketsList.add(ticket);
         }
 
 
-        return tickets;
+        return finalTicketsList;
+    }
+
+    public static void completeAV(Ticket ticket, List<Release> releases){
+
+       // System.out.println(ticket.getIv());
+
+        int iv = ticket.getIv().id();
+        int fv = ticket.getFv().id();
+
+        System.out.println("Ticket Key " + ticket.getTicketKey() + " IV: " + iv +  " FV: " + fv);
+
+        for(Release release : releases){
+            if(release.id() > iv && release.id() < fv ){
+                //System.out.println("ciaooo");
+                ticket.addAV(release);
+            }
+        }
+
     }
 
     public List<Ticket> obtainTickets(JsonArray jsonIssues, List<Release> selectedReleases) {
 
         for(JsonElement jsonElement : jsonIssues){
-
-
 
             JsonObject issue = jsonElement.getAsJsonObject();
 
@@ -65,7 +89,6 @@ public class TicketController {
             JsonObject fields = issue.getAsJsonObject("fields");
 
             // System.out.println(issueKey + " " + fields);
-
 
             JsonArray fixVersionsArray = fields.getAsJsonArray("fixVersions");
 
@@ -83,19 +106,6 @@ public class TicketController {
                 System.out.println(resolutionDate);
             }
             LocalDate creationDate = LocalDate.parse(creationDateString.substring(0,10));
-
-           // Release openingVersion = getReleaseAfterOrEqualDate(creationDate, selectedReleases, issueKey);
-
-           // selectedReleases.sort(Comparator.comparing(Release::releaseDate));
-
-
-           // if(creationDate.isAfter(selectedReleases.getLast().getReleaseDate())) continue;
-            //LocalDate resolutionDate = LocalDate.parse(resolutionDateString.substring(0,10));
-
-
-
-           // System.out.println(creationDate);
-
 
             List<Release> affectedVersionList = new ArrayList<>(List.of());
             List<Release> fixedVersionList = new ArrayList<>(List.of());
@@ -120,42 +130,42 @@ public class TicketController {
                     if(b.getAsJsonObject().has("releaseDate")) {
                         LocalDate releaseDate = LocalDate.parse(b.getAsJsonObject().get("releaseDate").getAsString());
 
-                        fixedVersionList.add(new Release(b.getAsJsonObject().get("name").getAsString(), releaseDate));
+                        //fixedVersionList.add(selectedReleases.stream().filter(release -> release.getReleaseDate().equals(releaseDate)).findFirst().get());
+
+                        //fixedVersionList.add(new Release(b.getAsJsonObject().get("name").getAsString(), releaseDate));
+
+                        selectedReleases.stream()
+                                .filter(release -> release.getReleaseDate().equals(releaseDate))
+                                .findFirst()
+                                .ifPresent(fixedVersionList::add);
+
                     }
-
-
                 }
             }
 
             if(!fixedVersionList.isEmpty()) {
                 fixVersion = Collections.max(fixedVersionList, Comparator.comparing(Release::getReleaseDate));
 
-                System.out.println("fixVersion più recente: " + fixVersion.releaseName());
+                //System.out.println("fixVersion più recente: " + fixVersion.releaseName());
             }
             else if(resolutionDate != null) {
                 fixVersion = getReleaseAfterOrEqualDate(resolutionDate, selectedReleases);
             }
-//                String newest;
-//                if(!fixedVersionList.isEmpty()) {
-//                    newest = Collections.max(fixedVersionList, JiraBugFetcher::compareVersions);
-//
-//                }
-          //  System.out.println("1"+creationDate);
+
             Release openingVersion = getReleaseAfterOrEqualDate(creationDate, selectedReleases);
-          //  System.out.println("2"+openingVersion.getReleaseDate());
-         //   if(!affectedVersionList.isEmpty() && !fixVersion) {}
 
             if(openingVersion != null && fixVersion != null) {
 
 
                 Ticket ticket = new Ticket(issueKey, creationDate, resolutionDate, openingVersion, fixVersion, affectedVersionList);
 
-                System.out.println("🐞 Bug " + issueKey + " " + openingVersion.getReleaseName() + " → Affected: [" + affectedVersionList.stream()
-                        .map(Release::getReleaseName)
-                        .collect(Collectors.joining(", ")) + "] → Fixed: [" + fixedVersionList.stream()
-                        .map(Release::getReleaseName)
-                        .collect(Collectors.joining(", ")) + "] " + fixVersionsArray.size());
+                if(issueKey.contains("BOOKKEEPER")) {
 
+                    System.out.println("🐞 Bug " + issueKey + " " + openingVersion.getReleaseName() + " → Affected: [" + affectedVersionList.stream()
+                            .map(Release::getReleaseName)
+                            .collect(Collectors.joining(", ")) + "] → Fixed: [" + fixVersion.getReleaseName() + "] " + fixVersionsArray.size());
+
+                }
 
                 ticketList.add(ticket);
 
@@ -172,12 +182,8 @@ public class TicketController {
 
         //the first release which has a date after or equal to the one given is returned
         for (Release release : releasesList) {
-//            if (issueKey.equals("AVRO-4126")) {
-//            System.out.println(specificDate+"aoooo "+ release.getReleaseDate());
-//            }
             if (!release.releaseDate().isBefore(specificDate)) {
-              //  System.out.println("fjindibnj");
-                return release;
+                 return release;
             }
         }
         return null;

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        List<String> projects = List.of("BOOKKEEPER");
+        List<String> projects = List.of("BOOKKEEPER", "OPENJPA");
 
         Controller controller =  new Controller();
         controller.analyzeProjects(projects);

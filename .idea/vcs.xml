@@ -2,9 +2,12 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/4.0.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/4.1.0" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/bookkeeper-clone" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.0.0" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.1.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.1.1" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.10.0" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.0" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.2.1" vcs="Git" />
@@ -26,5 +29,42 @@
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.7.3" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.8.0" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/bookkeeper/release-4.8.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/0.9.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/0.9.6" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/0.9.7" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.0.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.0.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.0.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.0.3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.0.4" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.1.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.2.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.2.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.2.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/1.2.3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.0.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.0.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.1.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.1.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.2.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.2.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.2.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.3.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.4.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.4.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.4.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/2.4.3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.0.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.1.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.1.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.1.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.2.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.2.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/3.2.2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/4.0.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/4.0.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/4.1.0" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/4.1.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/openjpa/openjpa-clone" vcs="Git" />
   </component>
 </project>

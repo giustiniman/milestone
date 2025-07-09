@@ -6,6 +6,7 @@ import main.TicketController;
 import model.Release;
 import model.Ticket;
 
+import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -21,12 +22,15 @@ public class Proportion {
 
     private float totalProportion;
 
+    private String project;
+
+    public void setProject(String project) {
+        this.project = project;
+    }
+
 
     private enum Projects {
-        AVRO,
-        SYNCOPE,
-        STORM,
-        ZOOKEEPER
+        BOOKKEEPER
     }
 
     public Proportion(){
@@ -48,6 +52,8 @@ public class Proportion {
 
         estimatedIV = obtainIV(proportion, ticket);
 
+        System.out.println("Estimated IV: " + estimatedIV);
+
         for(Release release : releaseList){
             if(estimatedIV == release.id()){
                 ticket.setIv(release);
@@ -65,15 +71,15 @@ public class Proportion {
 
         List<Float> proportionListTemp = new ArrayList<>();
 
-        for(Projects project: Projects.values()){
+        //for(Projects project: Projects.values()){
 
-            System.out.println(project);
+            System.out.println(this.project);
 
 
            // JiraBugFetcher jiraBugFetcher = new ExtractFromJira(project.toString().toUpperCase());
           //  JiraBugFetcher jiraBugFetcher = new JiraBugFetcher();
-            JsonArray issues = JiraController.getJsonTickets(String.valueOf(project));
-            List<Release> allReleases = JiraController.fetchReleasedVersionsFromJira(String.valueOf(project));
+            JsonArray issues = JiraController.getJsonTickets(String.valueOf(this.project));
+            List<Release> allReleases = JiraController.fetchReleasedVersionsFromJira(String.valueOf(this.project));
             TicketController ticketController = new TicketController();
             List<Ticket> allTickets = ticketController.obtainTickets(issues, allReleases);
 
@@ -82,7 +88,7 @@ public class Proportion {
 
 
             //need to obtain all tickets that have AV set
-            List<Ticket> consistentTickets = TicketController.returnConsistentTickets(allTickets, resolutionDate);
+            List<Ticket> consistentTickets = ticketController.returnConsistentTickets(allTickets); // ho levato resolution date
             if(consistentTickets.size() >= 5){
 
                 Proportion proportion = new Proportion();
@@ -94,7 +100,7 @@ public class Proportion {
                 proportionListTemp.add(proportion.increment());
             }
 
-        }
+        //}
 
         return median(proportionListTemp);
 
@@ -105,6 +111,10 @@ public class Proportion {
         int ov = ticket.getOv().id();
         int fv = ticket.getFv().id();
         int estimatedIV;
+
+        System.out.println("OV: " + ov + " FV: " + fv);
+
+        if (ov>fv) ov=fv;
 
         if(ov!=fv){
             estimatedIV = max(1, (int)(fv - proportion*(fv - ov)));
@@ -122,6 +132,12 @@ public class Proportion {
         int ov = ticket.getOv().id();
         int fv = ticket.getFv().id();
 
+//        System.out.println("OV: " + ticket.getOv().getReleaseName() + " FV: " + ticket.getFv().getReleaseName());
+
+        //if(ticket.getTicketKey().equals("BOOKKEEPER-1105")){
+            System.out.println("OV: " + ticket.getOv().getReleaseName() + " "+ticket.getOv().id() +   " FV: " + ticket.getFv().getReleaseName() + " "+ ticket.getFv().id());
+        //}
+
         if(ov == fv){
             denominator = 1;
         }else{
@@ -130,8 +146,12 @@ public class Proportion {
 
         proportion = (float)(fv - ticket.getIv().id())/denominator;
 
+        System.out.println("Proportion: " + proportion);
+
         this.proportionList.add(proportion);
         this.totalProportion += proportion;
+
+        System.out.println("Total: " + this.totalProportion);
 
     }
 

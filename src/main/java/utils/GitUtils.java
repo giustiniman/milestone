@@ -10,8 +10,12 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevObject;
+import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,15 +50,15 @@ public class GitUtils {
 
         List<Release> allReleases = fetchReleasedVersionsFromJira(project);
 
-        int limit = (int) Math.ceil(allReleases.size() * 0.34);
-        List<Release> selected = allReleases.subList(0, limit);
+//        int limit = (int) Math.ceil(allReleases.size() * 0.34);
+//        List<Release> selected = allReleases.subList(0, limit);
 
-        for  (Release release : selected) {
-            System.out.println("✅ Release selezionate da JIRA (primo 34%): " + release.releaseName());
+        for  (Release release : allReleases) {
+            System.out.println("✅ Release selezionate da JIRA: " + release.releaseName());
 
         }
 
-        return selected;
+        return allReleases;
     }
 
     public static File checkout(String project, String releaseTag) throws Exception {
@@ -78,7 +82,62 @@ public class GitUtils {
         }
 
         return releaseDir;
+
+
+
     }
+
+    public static List<RevCommit> getCommitsForRelease(String repoPath, String tagName) throws Exception {
+        List<RevCommit> commits = new ArrayList<>();
+
+        // Costruisci il repository
+        Repository repository = new FileRepositoryBuilder()
+                .setGitDir(new File(repoPath + "/.git"))
+                .build();
+
+        try (Git git = new Git(repository)) {
+            ObjectId tagId = repository.resolve(tagName);
+
+            try (RevWalk revWalk = new RevWalk(repository)) {
+                RevObject object = revWalk.parseAny(tagId);
+
+                // Se è un tag annotato, dereferenzia fino al commit
+                if (object instanceof RevTag) {
+                    object = revWalk.parseCommit(((RevTag) object).getObject());
+                }
+
+                if (!(object instanceof RevCommit startCommit)) {
+                    throw new IllegalArgumentException("❌ L'oggetto specificato non è un commit");
+                }
+
+                Iterable<RevCommit> log = git.log().add(startCommit).call();
+                for (RevCommit commit : log) {
+                    commits.add(commit);
+                }
+            }
+        }
+
+        return commits;
+    }
+
+    /*public static List<RevCommit> getCommitsForRelease(String repoPath, String tagName) throws Exception {
+        List<RevCommit> commits = new ArrayList<>();
+
+        // Costruisci il repository
+        Repository repository = new FileRepositoryBuilder()
+                .setGitDir(new File(repoPath + "/.git"))
+                .build();
+
+        try (Git git = new Git(repository)) {
+            Iterable<RevCommit> log = git.log().add(repository.resolve(tagName)).call();
+            for (RevCommit commit : log) {
+                commits.add(commit);
+            }
+        }
+
+        return commits;
+    }*/
+
 
 
 

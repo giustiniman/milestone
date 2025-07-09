@@ -17,8 +17,7 @@ public class WEKAController {
 
     public static void classify(String project) throws Exception {
 
-        String datasetPath = "output/" + project + "_dataset.csv";
-        //String datasetPath = "./csv/final/bookkeeper.csv";
+        String datasetPath = "output/final/" + project + "_dataset.csv";
 
         // Carica il dataset
         DataSource source = new DataSource(datasetPath);
@@ -32,9 +31,10 @@ public class WEKAController {
 
     }
 
-    private static void evaluateClassifier(String name, Classifier classifier, Instances data) throws Exception {
+    /*private static void evaluateClassifier(String name, Classifier classifier, Instances data) throws Exception {
         System.out.println("\n🔍 Classificatore: " + name);
         Evaluation eval = new Evaluation(data);
+        eval.crossValidateModel();
 
         Random rand = new Random(1);
         int folds = 10;
@@ -61,7 +61,31 @@ public class WEKAController {
         System.out.printf(" - AUC: %.4f\n", eval.areaUnderROC(1));
         System.out.printf(" - Kappa: %.4f\n", eval.kappa());
         System.out.printf(" - NPofB20: %.4f\n", calculateNPofB20(eval, data));
+    }*/
+
+    private static void evaluateClassifier(String name, Classifier classifier, Instances data) throws Exception {
+        System.out.println("\n🔍 Classificatore: " + name);
+
+        Evaluation eval = new Evaluation(data);
+        int folds = 10;
+        Random rand = new Random(1);
+
+        // Riduci la dimensione del classificatore: RandomForest usa molta memoria
+        if (classifier instanceof RandomForest rf) {
+            rf.setNumIterations(50); // default è 100, abbassalo
+            rf.setMaxDepth(10); // limita profondità per salvare memoria
+            rf.setNumExecutionSlots(1);
+        }
+
+        eval.crossValidateModel(classifier, data, folds, rand);
+
+        System.out.printf(" - Precision: %.4f\n", eval.precision(1));
+        System.out.printf(" - Recall: %.4f\n", eval.recall(1));
+        System.out.printf(" - AUC: %.4f\n", eval.areaUnderROC(1));
+        System.out.printf(" - Kappa: %.4f\n", eval.kappa());
+        System.out.printf(" - NPofB20: %.4f\n", calculateNPofB20(eval, data));
     }
+
 
     private static double calculateNPofB20(Evaluation eval, Instances data) {
         // Placeholder: NPofB20 va calcolato come: % dei bug coperti nel 20% delle classi più sospette
